@@ -30,7 +30,7 @@ async function createDatabase() {
 			CREATE TABLE urls (
 			id SERIAL PRIMARY KEY,
 			original_url TEXT NOT NULL,
-			shortened_url TEXT NOT NULL,
+			shortened_url_code TEXT UNIQUE NOT NULL,
 			creation_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 			)
 		`;
