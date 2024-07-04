@@ -12,7 +12,6 @@ dotenv.config();
 const app = express();
 const port = 3000;
 
-
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -23,7 +22,7 @@ const pool = new Pool({
 
 // Testing pool connection
 try {
-  pool.query("");
+  pool.query("SELECT NOW()");
   console.log("Successfully connected to the database!");
 } catch (error) {
   console.error("Error connecting to the database:", error);
@@ -36,6 +35,13 @@ app.use(express.static("public"));
 
 app.post("/api/shorten", async (req, res) => {
   const { url } = req.body;
+
+  try {
+    const urlSchema = z.string().url();
+    urlSchema.parse(url);
+  } catch (error) {
+    return res.status(400).json({ error: "Not a valid URL." })
+  }
 
   // Creating new random url and verifying if it exists.
   async function generateUniqueString() {
@@ -65,10 +71,10 @@ app.post("/api/shorten", async (req, res) => {
   // Inserting into database
   try {
     await pool.query("INSERT INTO urls(original_url, shortened_url_code) VALUES($1, $2)", [url, random_string]);
-    res.status(201).json({ message: 'URL shortened successfully!' });
+    return res.status(201).json({ message: 'URL shortened successfully!' });
   } catch (error) {
     console.error('Error during query operation:', error);
-    res.status(500);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 
 });
