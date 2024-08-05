@@ -36,6 +36,7 @@ app.use(express.static("public"));
 app.post("/api/shorten", async (req, res) => {
   const { url } = req.body;
 
+  // Using zod test if the url sent is appropriate.
   try {
     const urlSchema = z.string().url();
     urlSchema.parse(url);
@@ -43,27 +44,27 @@ app.post("/api/shorten", async (req, res) => {
     return res.status(400).json({ error: "Not a valid URL." })
   }
 
-  // Creating new random url and verifying if it exists.
+  // Creates an unique and random url link string.
   async function generateUniqueString() {
     let str_length = 6
     let generated_string = nanoid(str_length);
-    while (true) {
+    var isUnique = false;
+
+    // Checking if the generated string is unique in the database.
+    do {
       try {
         const result = await pool.query("SELECT * FROM urls WHERE shortened_url_code = $1", [generated_string]);
-        // If the string is unique, return it.
-        if (result.rows.length === 0) {
-          return generated_string;
-        }
-        // If not, we try again.
-        else {
-          generated_string = nanoid(str_length);
-        }
+        
+        // If true, the string is unique.
+        isUnique = (result.rows.length === 0);
       }
       catch (error) {
         console.error("Error while generating new string:", error);
         return null;
       }
-    }
+    } while (!isUnique);
+
+    return generated_string;
   }
 
   const random_string = await generateUniqueString();
